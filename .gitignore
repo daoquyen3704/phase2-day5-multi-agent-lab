@@ -1,3 +1,5 @@
+.DS_Store
+.agents/
 .venv/
 __pycache__/
 *.pyc
@@ -10,4 +12,7 @@ build/
 *.egg-info/
 reports/*.json
 reports/*.md
+!reports/benchmark_report.md
+!reports/failure_modes.md
+!reports/trace_latest.json
 !.gitkeep

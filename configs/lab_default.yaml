@@ -19,6 +19,27 @@ agents:
 
 benchmark:
   queries:
+    - "You are designing a research experiment to compare a single-call LLM system with a multi-agent LLM system on complex research tasks.
+      Your deliverable must be a complete experimental plan.
+      You must include:
+      1. The research question
+      2. Hypotheses
+      3. Task design
+      4. Datasets or source materials
+      5. Fair comparison setup
+      6. Metrics
+      7. Human evaluation criteria
+      8. Statistical or methodological considerations
+      9. Expected results and alternative interpretations
+      10. A red-team section explaining how the experiment could be misleading, unfair, or easy to game
+      11. A revised experiment design after taking the red-team critique seriously
+      Constraints:
+      - You must explicitly address token budget fairness
+      - You must explain how to avoid giving the multi-agent system an unfair advantage
+      - You must discuss how to separate gains from decomposition vs gains from more inference time
+      - The red-team critique must be concrete, not superficial
+      Output format:
+      Write the answer as a structured internal lab proposal."
     - "Research GraphRAG state-of-the-art and write a 500-word summary"
     - "Compare single-agent and multi-agent workflows for customer support"
     - "Summarize production guardrails for LLM agents"

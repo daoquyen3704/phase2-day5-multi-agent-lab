@@ -1,0 +1,195 @@
+{
+  "request": {
+    "query": "Research GraphRAG state-of-the-art and write a 500-word summary",
+    "max_sources": 5,
+    "audience": "technical learners"
+  },
+  "iteration": 4,
+  "route_history": [
+    "researcher",
+    "analyst",
+    "writer",
+    "done"
+  ],
+  "sources": [
+    {
+      "title": "Welcome - GraphRAG",
+      "url": "https://microsoft.github.io/graphrag",
+      "snippet": "Figure 1: LLM-generated knowledge graph built from a private dataset using GPT-4 Turbo. Figure 1: An LLM-generated knowledge graph built using GPT-4 Turbo. GraphRAG is a structured, hierarchical approach to Retrieval Augmented Generation (RAG), as opposed to naive semantic-search approaches using plain text snippets. The GraphRAG process involves extracting a knowledge graph out of raw text, building a community hierarchy, generating summaries for these communities, and then leveraging these structures when perform RAG-based tasks. To learn more about GraphRAG and how it can be used to enhance your language model's ability to reason about your private data, please visit the Microsoft Research Blog Post. To start using GraphRAG, check out the *Get Started* guide. This technique is an important part of most LLM-based tools and the majority of RAG approaches use vector similarity as the search technique, which we call *Baseline RAG*. This graph, along with community summaries and graph machine learning outputs, are used to augment prompts at query time.",
+      "metadata": {
+        "provider": "tavily"
+      }
+    },
+    {
+      "title": "Retrieval-Augmented Generation with Graphs (GraphRAG) - arXiv",
+      "url": "https://arxiv.org/html/2501.00309v2",
+      "snippet": "# Retrieval-Augmented Generation with Graphs (GraphRAG). Retrieval-augmented generation (RAG) is a powerful technique that enhances downstream task execution by retrieving additional information, such as knowledge, skills, and tools from external sources. Graph, by its intrinsic \"nodes connected by edges\" nature, encodes massive heterogeneous and relational information, making it a golden resource for RAG in tremendous real-world applications. As a result, we have recently witnessed increasing attention on equipping RAG with Graph, i.e., GraphRAG. However, unlike conventional RAG, where the retriever, generator, and external data sources can be uniformly designed in the neural-embedding space, the uniqueness of graph-structured data, such as diverse-formatted and domain-specific relational knowledge, poses unique and significant challenges when designing GraphRAG for different domains. Our survey first proposes a holistic GraphRAG framework by defining its key components, including query processor, retriever, organizer, generator, and data source. The retrieved content is then refined by an organizer and seamlessly integrated with the original query or instruction, which is further fed into the generator to produce the final answer.",
+      "metadata": {
+        "provider": "tavily"
+      }
+    },
+    {
+      "title": "LazyGraphRAG: Setting a new standard for quality and cost - Microsoft",
+      "url": "https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost",
+      "snippet": "[Skip to main content](https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost). *   [Code & data](https://www.microsoft.com/en-us/research/tools/). In recent blog posts, we have shared two new query mechanisms that exploit the rich, summary-based data index created by GraphRAG to improve [local search performance](https://www.microsoft.com/en-us/research/blog/introducing-drift-search-combining-global-and-local-search-methods-to-improve-quality-and-efficiency/) and [global search costs](https://www.microsoft.com/en-us/research/blog/graphrag-improving-global-search-via-dynamic-community-selection/), respectively. *   For comparable query costs to vector RAG, LazyGraphRAG outperforms all competing methods on local queries, including long-context vector RAG and GraphRAG [DRIFT](https://www.microsoft.com/en-us/research/blog/introducing-drift-search-combining-global-and-local-search-methods-to-improve-quality-and-efficiency/) search (our recently introduced RAG approach shown to outperform vector RAG) as well as GraphRAG local search. *   Metrics: Comprehensiveness, Diversity, Empowerment (as described [here](https://www.microsoft.com/en-us/research/publication/from-local-to-global-a-graph-rag-approach-to-query-focused-summarization/), with an LLM used to compare pairs of answers head-to-head on each metric). | C3_Dynamic | GraphRAG Global Search at community level 3 using dynamic community selection (a cost saving solution introduced in our [previous blog post](https://www.microsoft.com/en-us/research/blog/graphrag-improving-global-search-via-dynamic-community-selection/)) |. Clustered bar charts showing win rates of LazyGraphRAG with relevance test budgets of (100, 500, 1,500) over competing conditions for each combination of (local, global) queries and (comprehensiveness, diversity, empowerment) metrics.](https://www.microsoft.com/en-us/research/wp-content/uploads/2024/11/LazyGraphRAG-blog_fig1.png). *   [Manage cookies](https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost#).",
+      "metadata": {
+        "provider": "tavily"
+      }
+    },
+    {
+      "title": "How GraphRAG Accelerates Time to Insight and Boosts ROI",
+      "url": "https://graphwise.ai/blog/from-data-to-decisions-how-graphrag-accelerates-time-to-insight-and-boosts-roi",
+      "snippet": "# From Data to Decisions \u2014 How GraphRAG Accelerates Time to Insight and Boosts ROI. Learn how GraphRAG helps teams cut decision latency, improve accuracy, and turn complex data into trusted insights. Data teams spend a lot of time cleaning and validating information \u2014 stretching decision timelines and eroding confidence in results. Graphwise\u2019s GraphRAG\u00a0changes this by adding a graph-based layer of relationships that helps AI interpret meaning beyond just text. The result is faster, traceable, and more reliable insights \u2014 giving organizations a clearer path from raw data to confident decisions and measurable ROI. This post examines how data complexity and decision latency impact enterprise performance \u2014 and how GraphRAG\u2019s graph-based architecture transforms information into a strategic advantage. Without a solution that links data, context, and meaning \u2014 the sheer volume of information can become more of a barrier than a competitive advantage. This gives the AI a richer understanding of the data and how different elements relate to one another \u2014 providing teams with answers they can trust.",
+      "metadata": {
+        "provider": "tavily"
+      }
+    },
+    {
+      "title": "Microsoft's GraphRAG is One of the Newest RAG Techniques",
+      "url": "https://thesequence.substack.com/p/the-sequence-knowledge-497-microsofts",
+      "snippet": "# TheSequence. # The Sequence Knowledge #497: Microsoft's GraphRAG is One of the Newest RAG Techniques. ### The methods enables RAG in an interconnected graph of documents. ## Today we will Discuss:. *Deep diving into Microsoft\u2019s GraphRAG paper.*. ### **\ud83d\udca1 AI Concept of the Day: Getting Into GraphRAG**. Graph-RAG represents a significant advancement in retrieval augmented generation, leveraging knowledge graphs to enhance the contextual understanding and response generation capabilities of large language models (LLMs). This technique transforms isolated documents into an interconnected web of knowledge, revealing the underlying structure of complex datasets. By incorporating a graph database as a source of contextual information, Graph-RAG enables LLMs to access different levels of information about interconnections in the data, allowing for both a holistic view of the entire knowledge base and granular observations of specific data point relationships. ## This post is for paid subscribers.",
+      "metadata": {
+        "provider": "tavily"
+      }
+    }
+  ],
+  "research_notes": "Research notes for Query: Research GraphRAG state-of-the-art and write a 500-word summary:\n- Define the problem, target users, and expected decision.\n- Compare at least two approaches and capture trade-offs.\n- Keep citations attached to claims so analysis can verify evidence.",
+  "analysis_notes": "Analysis notes:\n- Strong evidence should be tied to named sources.\n- Multi-agent workflows help when tasks need separation of concerns.\n- Main risks are latency, cost, coordination errors, and weak validation.",
+  "final_answer": "Final answer:\nA reliable research workflow should separate source collection, analysis, and synthesis. Use citations for claims, keep routing explicit, and benchmark the multi-agent result against a single-agent baseline.\n\nReferences:\n[1] Welcome - GraphRAG - https://microsoft.github.io/graphrag\n[2] Retrieval-Augmented Generation with Graphs (GraphRAG) - arXiv - https://arxiv.org/html/2501.00309v2\n[3] LazyGraphRAG: Setting a new standard for quality and cost - Microsoft - https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost\n[4] How GraphRAG Accelerates Time to Insight and Boosts ROI - https://graphwise.ai/blog/from-data-to-decisions-how-graphrag-accelerates-time-to-insight-and-boosts-roi\n[5] Microsoft's GraphRAG is One of the Newest RAG Techniques - https://thesequence.substack.com/p/the-sequence-knowledge-497-microsofts",
+  "agent_results": [
+    {
+      "agent": "supervisor",
+      "content": "Next route: researcher",
+      "metadata": {
+        "iteration": 1
+      }
+    },
+    {
+      "agent": "researcher",
+      "content": "Research notes for Query: Research GraphRAG state-of-the-art and write a 500-word summary:\n- Define the problem, target users, and expected decision.\n- Compare at least two approaches and capture trade-offs.\n- Keep citations attached to claims so analysis can verify evidence.",
+      "metadata": {
+        "source_count": 5,
+        "input_tokens": 879,
+        "output_tokens": 41,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "agent": "supervisor",
+      "content": "Next route: analyst",
+      "metadata": {
+        "iteration": 2
+      }
+    },
+    {
+      "agent": "analyst",
+      "content": "Analysis notes:\n- Strong evidence should be tied to named sources.\n- Multi-agent workflows help when tasks need separation of concerns.\n- Main risks are latency, cost, coordination errors, and weak validation.",
+      "metadata": {
+        "input_tokens": 75,
+        "output_tokens": 32,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "agent": "supervisor",
+      "content": "Next route: writer",
+      "metadata": {
+        "iteration": 3
+      }
+    },
+    {
+      "agent": "writer",
+      "content": "Final answer:\nA reliable research workflow should separate source collection, analysis, and synthesis. Use citations for claims, keep routing explicit, and benchmark the multi-agent result against a single-agent baseline.\n\nReferences:\n[1] Welcome - GraphRAG - https://microsoft.github.io/graphrag\n[2] Retrieval-Augmented Generation with Graphs (GraphRAG) - arXiv - https://arxiv.org/html/2501.00309v2\n[3] LazyGraphRAG: Setting a new standard for quality and cost - Microsoft - https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost\n[4] How GraphRAG Accelerates Time to Insight and Boosts ROI - https://graphwise.ai/blog/from-data-to-decisions-how-graphrag-accelerates-time-to-insight-and-boosts-roi\n[5] Microsoft's GraphRAG is One of the Newest RAG Techniques - https://thesequence.substack.com/p/the-sequence-knowledge-497-microsofts",
+      "metadata": {
+        "input_tokens": 161,
+        "output_tokens": 29,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "agent": "supervisor",
+      "content": "Next route: done",
+      "metadata": {
+        "iteration": 4
+      }
+    }
+  ],
+  "trace": [
+    {
+      "name": "supervisor.route",
+      "payload": {
+        "name": "supervisor.route",
+        "attributes": {
+          "route": "researcher",
+          "iteration": 1
+        },
+        "duration_seconds": 3.3000032999552786e-06
+      }
+    },
+    {
+      "name": "researcher.run",
+      "payload": {
+        "name": "researcher.run",
+        "attributes": {
+          "query": "Research GraphRAG state-of-the-art and write a 500-word summary"
+        },
+        "duration_seconds": 2.10545429999911,
+        "source_count": 5
+      }
+    },
+    {
+      "name": "supervisor.route",
+      "payload": {
+        "name": "supervisor.route",
+        "attributes": {
+          "route": "analyst",
+          "iteration": 2
+        },
+        "duration_seconds": 3.1999952625483274e-06
+      }
+    },
+    {
+      "name": "analyst.run",
+      "payload": {
+        "name": "analyst.run",
+        "attributes": {
+          "source_count": 5
+        },
+        "duration_seconds": 6.620000203838572e-05
+      }
+    },
+    {
+      "name": "supervisor.route",
+      "payload": {
+        "name": "supervisor.route",
+        "attributes": {
+          "route": "writer",
+          "iteration": 3
+        },
+        "duration_seconds": 1.4999968698248267e-06
+      }
+    },
+    {
+      "name": "writer.run",
+      "payload": {
+        "name": "writer.run",
+        "attributes": {
+          "source_count": 5
+        },
+        "duration_seconds": 8.41999935801141e-05
+      }
+    },
+    {
+      "name": "supervisor.route",
+      "payload": {
+        "name": "supervisor.route",
+        "attributes": {
+          "route": "done",
+          "iteration": 4
+        },
+        "duration_seconds": 1.3999961083754897e-06
+      }
+    }
+  ],
+  "errors": []
+}

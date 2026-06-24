@@ -1,31 +1,10 @@
-"""Writer agent – produces the final answer."""
-
-import logging
+"""Writer agent skeleton."""
 
 from multi_agent_research_lab.agents.base import BaseAgent
-from multi_agent_research_lab.core.errors import AgentExecutionError
-from multi_agent_research_lab.core.schemas import AgentName, AgentResult
+from multi_agent_research_lab.core.schemas import AgentName, AgentResult, SourceDocument
 from multi_agent_research_lab.core.state import ResearchState
 from multi_agent_research_lab.observability.tracing import trace_span
 from multi_agent_research_lab.services.llm_client import LLMClient
-
-logger = logging.getLogger(__name__)
-
-SYSTEM_PROMPT = """You are a skilled Technical Writer. Your job is to synthesize research and
-analysis into a clear, well-structured response for the target audience.
-
-Requirements:
-- Write approximately 500 words (±100 words).
-- Start with a brief executive summary (2-3 sentences).
-- Use clear section headers (##).
-- Cite sources inline where relevant using [Source Title] notation.
-- End with a "## Key Takeaways" section (3-5 bullet points).
-- Tailor language to the stated audience.
-- Do NOT invent facts not present in the research/analysis notes.
-- If the research has gaps, acknowledge them honestly.
-
-Tone: authoritative but accessible, no unnecessary jargon.
-"""
 
 
 class WriterAgent(BaseAgent):
@@ -33,68 +12,59 @@ class WriterAgent(BaseAgent):
 
     name = "writer"
 
-    def __init__(self, llm: LLMClient | None = None) -> None:
-        self._llm = llm or LLMClient()
+    def __init__(self, llm_client: LLMClient | None = None) -> None:
+        self.llm_client = llm_client or LLMClient()
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate state.final_answer."""
-        if not state.research_notes:
-            raise AgentExecutionError("Writer: research_notes is empty")
+        """Populate `state.final_answer`.
 
-        # Build comprehensive context
-        sources_summary = ""
-        if state.sources:
-            sources_summary = "**Available Sources:**\n" + "\n".join(
-                f"- {s.title}" + (f" ({s.url})" if s.url else "")
-                for s in state.sources
+        Synthesizes final answer with source references where available.
+        """
+
+        with trace_span("writer.run", {"source_count": len(state.sources)}) as span:
+            response = self.llm_client.complete(
+                system_prompt=(
+                    "You are the Writer agent. Produce a clear final answer for the "
+                    "audience. Cite sources using [1], [2] style references when possible."
+                ),
+                user_prompt=(
+                    f"Query: {state.request.query}\n"
+                    f"Audience: {state.request.audience}\n"
+                    f"Research notes:\n{state.research_notes or 'No research notes.'}\n"
+                    f"Analysis notes:\n{state.analysis_notes or 'No analysis notes.'}\n"
+                    f"Sources:\n{self._format_source_references(state.sources)}"
+                ),
             )
-
-        user_prompt = (
-            f"Original Query: {state.request.query}\n\n"
-            f"Audience: {state.request.audience}\n\n"
-            f"{sources_summary}\n\n"
-            f"Research Notes:\n{state.research_notes}\n\n"
-            f"Analysis Notes:\n{state.analysis_notes or '(no analysis available)'}\n\n"
-            "Please write the final response."
-        )
-
-        with trace_span("writer.compose") as span:
-            try:
-                response = self._llm.complete(
-                    system_prompt=SYSTEM_PROMPT,
-                    user_prompt=user_prompt,
+            state.final_answer = self._append_references(response.content, state.sources)
+            state.agent_results.append(
+                AgentResult(
+                    agent=AgentName.WRITER,
+                    content=state.final_answer,
+                    metadata={
+                        "input_tokens": response.input_tokens,
+                        "output_tokens": response.output_tokens,
+                        "cost_usd": response.cost_usd,
+                    },
                 )
-                state.final_answer = response.content
-                span["attributes"]["output_tokens"] = response.output_tokens
-
-                # Track token cost in agent result metadata
-                cost = response.cost_usd
-                total_input = sum(
-                    (r.metadata.get("input_tokens") or 0) for r in state.agent_results
-                )
-            except Exception as exc:
-                err_msg = f"Writer LLM failed: {exc}"
-                logger.error(err_msg)
-                state.errors.append(err_msg)
-                # Fallback: stitch notes together
-                state.final_answer = (
-                    f"# {state.request.query}\n\n"
-                    f"{state.research_notes}\n\n"
-                    f"---\n\n"
-                    f"{state.analysis_notes or ''}"
-                )
-                cost = None
-
-        state.agent_results.append(
-            AgentResult(
-                agent=AgentName.WRITER,
-                content=state.final_answer,
-                metadata={
-                    "answer_len": len(state.final_answer),
-                    "cost_usd": cost,
-                },
             )
-        )
-        state.add_trace_event("writer.done", {"answer_len": len(state.final_answer)})
-        logger.info("Writer done | answer=%d chars", len(state.final_answer))
+            state.add_trace_event("writer.run", span)
         return state
+
+    @staticmethod
+    def _format_source_references(sources: list[SourceDocument]) -> str:
+        if not sources:
+            return "No source references available."
+        return "\n".join(
+            f"[{index}] {source.title}: {source.url or source.snippet}"
+            for index, source in enumerate(sources, start=1)
+        )
+
+    @staticmethod
+    def _append_references(content: str, sources: list[SourceDocument]) -> str:
+        if not sources or "References:" in content:
+            return content
+        references = "\n".join(
+            f"[{index}] {source.title} - {source.url or 'local note'}"
+            for index, source in enumerate(sources, start=1)
+        )
+        return f"{content.strip()}\n\nReferences:\n{references}"

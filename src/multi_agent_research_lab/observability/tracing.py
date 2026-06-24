@@ -14,7 +14,8 @@ from typing import Any
 def trace_span(name: str, attributes: dict[str, Any] | None = None) -> Iterator[dict[str, Any]]:
     """Minimal span context used by the skeleton.
 
-    TODO(student): Replace or augment with LangSmith/Langfuse provider spans.
+    This local span can be replaced or augmented with LangSmith, Langfuse, or
+    OpenTelemetry provider spans in a production deployment.
     """
 
     started = perf_counter()

@@ -1,148 +1,147 @@
-"""Multi-agent workflow – Supervisor-driven loop.
+"""LangGraph workflow orchestration."""
 
-Architecture:
-    User Query → Supervisor → [Researcher | Analyst | Writer] → Supervisor → ... → done
+from importlib import import_module
+from time import perf_counter
+from typing import Any, Protocol, cast
 
-This implementation uses a pure-Python loop rather than LangGraph to avoid
-heavyweight setup dependencies while preserving the same logical graph structure.
-A LangGraph migration path is documented below for students who want to extend it.
-"""
-
-import logging
-import time
-
-from multi_agent_research_lab.agents.analyst import AnalystAgent
-from multi_agent_research_lab.agents.critic import CriticAgent
-from multi_agent_research_lab.agents.researcher import ResearcherAgent
-from multi_agent_research_lab.agents.supervisor import (
-    ROUTE_ANALYST,
-    ROUTE_DONE,
-    ROUTE_RESEARCHER,
-    ROUTE_WRITER,
+from multi_agent_research_lab.agents import (
+    AnalystAgent,
+    ResearcherAgent,
     SupervisorAgent,
+    WriterAgent,
 )
-from multi_agent_research_lab.agents.writer import WriterAgent
-from multi_agent_research_lab.core.config import get_settings
+from multi_agent_research_lab.agents.base import BaseAgent
+from multi_agent_research_lab.core.config import Settings, get_settings
 from multi_agent_research_lab.core.errors import AgentExecutionError
 from multi_agent_research_lab.core.state import ResearchState
-from multi_agent_research_lab.observability.tracing import trace_span
-from multi_agent_research_lab.services.llm_client import LLMClient
-from multi_agent_research_lab.services.search_client import SearchClient
 
-logger = logging.getLogger(__name__)
+
+class InvokableGraph(Protocol):
+    def invoke(self, state: ResearchState) -> object:
+        """Invoke a compiled graph."""
+
+
+class SequentialWorkflow:
+    """Fallback workflow used when LangGraph is not installed."""
+
+    def __init__(self, workflow: "MultiAgentWorkflow") -> None:
+        self.workflow = workflow
+
+    def invoke(self, state: ResearchState) -> ResearchState:
+        return self.workflow._run_sequential(state)
 
 
 class MultiAgentWorkflow:
-    """Builds and runs the multi-agent research graph.
+    """Builds and runs the multi-agent graph.
 
-    The loop topology is:
-        supervisor → researcher → supervisor
-                   → analyst   → supervisor
-                   → writer    → supervisor
-                   → done      (exit)
-
-    An optional CriticAgent runs after the writer before returning.
-
-    LangGraph Migration Note:
-        To convert to LangGraph, replace the while-loop below with:
-            graph = StateGraph(ResearchState)
-            graph.add_node("supervisor", supervisor.run)
-            graph.add_node("researcher", researcher.run)
-            ... etc.
-            graph.add_conditional_edges("supervisor", route_fn, {...})
-            graph.set_entry_point("supervisor")
-            compiled = graph.compile()
-            result = compiled.invoke(state)
+    Keep orchestration here; keep agent internals in `agents/`.
     """
 
     def __init__(
         self,
-        llm: LLMClient | None = None,
-        search: SearchClient | None = None,
-        enable_critic: bool = False,
+        supervisor: SupervisorAgent | None = None,
+        researcher: ResearcherAgent | None = None,
+        analyst: AnalystAgent | None = None,
+        writer: WriterAgent | None = None,
+        settings: Settings | None = None,
     ) -> None:
-        _llm = llm or LLMClient()
-        _search = search or SearchClient()
+        self.settings = settings or get_settings()
+        self.supervisor = supervisor or SupervisorAgent(self.settings)
+        self.agents: dict[str, BaseAgent] = {
+            "researcher": researcher or ResearcherAgent(),
+            "analyst": analyst or AnalystAgent(),
+            "writer": writer or WriterAgent(),
+        }
+        self._compiled_graph: object | None = None
 
-        self._supervisor = SupervisorAgent()
-        self._researcher = ResearcherAgent(llm=_llm, search=_search)
-        self._analyst = AnalystAgent(llm=_llm)
-        self._writer = WriterAgent(llm=_llm)
-        self._critic = CriticAgent(llm=_llm) if enable_critic else None
-        self._settings = get_settings()
+    def build(self) -> object:
+        """Create a LangGraph graph.
 
-    def build(self) -> "MultiAgentWorkflow":
-        """Return self (compatibility shim for LangGraph-style API)."""
-        return self
+        Falls back to a sequential implementation if LangGraph is unavailable.
+        """
+
+        if self._compiled_graph is not None:
+            return self._compiled_graph
+
+        try:
+            self._compiled_graph = self._build_langgraph()
+        except (ImportError, ModuleNotFoundError):
+            self._compiled_graph = SequentialWorkflow(self)
+        return self._compiled_graph
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Execute the supervisor→worker loop and return final state."""
-        start = time.perf_counter()
+        """Execute the graph and return final state.
 
-        with trace_span("workflow.run", {"query": state.request.query}) as workflow_span:
-            agent_map = {
-                ROUTE_RESEARCHER: self._researcher,
-                ROUTE_ANALYST: self._analyst,
-                ROUTE_WRITER: self._writer,
-            }
+        Compiles the graph on first use and converts the result back to
+        `ResearchState` for callers.
+        """
 
-            while True:
-                # Check wall-clock timeout
-                elapsed = time.perf_counter() - start
-                if elapsed > self._settings.timeout_seconds:
-                    logger.warning("Workflow timeout after %.1fs", elapsed)
-                    state.errors.append(f"Timeout after {elapsed:.1f}s")
-                    break
+        graph = cast(InvokableGraph, self.build())
+        result = graph.invoke(state)
+        if isinstance(result, ResearchState):
+            return result
+        if isinstance(result, dict):
+            return ResearchState.model_validate(result)
+        raise AgentExecutionError(f"Workflow returned unsupported result: {type(result).__name__}")
 
-                # Supervisor decides next route
-                try:
-                    state = self._supervisor.run(state)
-                except Exception as exc:
-                    logger.error("Supervisor error: %s", exc)
-                    state.errors.append(f"Supervisor: {exc}")
-                    break
+    def _build_langgraph(self) -> object:
+        langgraph = import_module("langgraph.graph")
+        state_graph_class = langgraph.__dict__["StateGraph"]
+        end = langgraph.__dict__["END"]
 
-                next_route = state.route_history[-1] if state.route_history else ROUTE_DONE
+        graph: Any = state_graph_class(ResearchState)
+        graph.add_node("supervisor", self.supervisor.run)
+        for route, agent in self.agents.items():
+            graph.add_node(route, agent.run)
 
-                if next_route == ROUTE_DONE:
-                    logger.info("Workflow complete after %d iterations", state.iteration)
-                    break
+        graph.set_entry_point("supervisor")
+        graph.add_conditional_edges(
+            "supervisor",
+            self._next_route,
+            {
+                "researcher": "researcher",
+                "analyst": "analyst",
+                "writer": "writer",
+                "done": end,
+            },
+        )
+        for route in self.agents:
+            graph.add_edge(route, "supervisor")
+        return graph.compile()
 
-                worker = agent_map.get(next_route)
-                if worker is None:
-                    logger.error("Unknown route: %s", next_route)
-                    state.errors.append(f"Unknown route: {next_route}")
-                    break
+    @staticmethod
+    def _next_route(state: ResearchState) -> str:
+        if not state.route_history:
+            return "done"
+        return state.route_history[-1]
 
-                # Execute the worker
-                try:
-                    with trace_span(f"{next_route}.execute"):
-                        state = worker.run(state)
-                except AgentExecutionError as exc:
-                    err_msg = f"{next_route} failed: {exc}"
-                    logger.error(err_msg)
-                    state.errors.append(err_msg)
-                    # Don't break – let supervisor decide next action (may fallback to done)
-                except Exception as exc:
-                    err_msg = f"{next_route} unexpected error: {exc}"
-                    logger.exception(err_msg)
-                    state.errors.append(err_msg)
-                    break
+    def _run_sequential(self, state: ResearchState) -> ResearchState:
+        started = perf_counter()
+        max_steps = self.settings.max_iterations + len(self.agents) + 1
 
-            # Optional critic pass
-            if self._critic and state.final_answer:
-                try:
-                    state = self._critic.run(state)
-                except Exception as exc:
-                    logger.warning("Critic skipped: %s", exc)
+        for _ in range(max_steps):
+            if perf_counter() - started > self.settings.timeout_seconds:
+                state.errors.append("Workflow timeout reached.")
+                break
 
-            total_time = time.perf_counter() - start
-            workflow_span["attributes"]["total_seconds"] = total_time
-            workflow_span["attributes"]["iterations"] = state.iteration
-            workflow_span["attributes"]["errors"] = len(state.errors)
+            state = self.supervisor.run(state)
+            route = self._next_route(state)
+            if route == "done":
+                return state
 
-        state.add_trace_event("workflow.complete", {
-            "total_seconds": total_time,
-            "route_history": state.route_history,
-        })
+            agent = self.agents.get(route)
+            if agent is None:
+                state.errors.append(f"Unknown route: {route}")
+                break
+
+            try:
+                state = agent.run(state)
+            except AgentExecutionError as exc:
+                state.errors.append(str(exc))
+                if route != "writer":
+                    state = self.agents["writer"].run(state)
+                break
+
+        if not state.final_answer:
+            state = self.agents["writer"].run(state)
         return state
